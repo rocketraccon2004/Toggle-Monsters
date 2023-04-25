@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "RrgTNn++AEqKpriLa1gAB8c3H6TXrtjxIMpQ2VMOHX5BOJ6WZQstdery4CiSY9Kx8grOfz9P8zoCysR8omcURw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\jolyo\\RiderProjects\\Toggle Monsters\\Toggle Monsters\\Toggle Monsters.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jolyo\\.nuget\\packages\\pathoschild.stardew.modbuildconfig\\4.1.0\\pathoschild.stardew.modbuildconfig.4.1.0.nupkg.sha512"
+  ],
+  "logs": []
+}

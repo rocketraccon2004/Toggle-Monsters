@@ -1,9 +1,10 @@
-using StardewModdingAPI.Utilities;
+﻿using StardewModdingAPI.Utilities;
 
-namespace Toggle_Monsters;
-
-public class ModConfig
+namespace Toggle_Monsters
 {
-	public KeybindList toggleKey { get; } = KeybindList.Parse("OemTilde");
-
+    public class ModConfig
+    {
+        public KeybindList toggleKey { get; set; } = KeybindList.Parse("OemTilde");
+        public bool defaultValue = false;
+    }
 }

@@ -1,64 +1,106 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using StardewModdingAPI;
+﻿using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Monsters;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace Toggle_Monsters;
-
-public class ModEntry : Mod
+namespace Toggle_Monsters
 {
-	public bool spawnMonsters = true;
+    public class ModEntry : Mod
+    {
+        private bool spawnMonsters = true;
+        public ModConfig config;
+        private bool hasSetDefaultValue = false;
 
-	public ModConfig config;
+        public override void Entry(IModHelper helper)
+        {
+            config = helper.ReadConfig<ModConfig>();
+            helper.Events.GameLoop.GameLaunched += onGameLaunch;
+            helper.Events.World.NpcListChanged += onNPCListChanged;
+            helper.Events.World.LocationListChanged += onLocationListChanged;
+            helper.Events.Input.ButtonPressed += onKeyPress;
+            helper.Events.GameLoop.UpdateTicked += onUpdateTick;
+        }
 
-	public override void Entry(IModHelper helper)
-	{
-		config = helper.ReadConfig<ModConfig>();
-		helper.get_Events().get_World().add_NpcListChanged((EventHandler<NpcListChangedEventArgs>)World_NpcListChanged);
-		helper.get_Events().get_World().add_LocationListChanged((EventHandler<LocationListChangedEventArgs>)World_LocationListChanged);
-		helper.get_Events().get_Input().add_ButtonPressed((EventHandler<ButtonPressedEventArgs>)Input_ButtonPressed);
-	}
+        private void onUpdateTick(object sender, UpdateTickedEventArgs e)
+        {
+            if (Context.IsWorldReady && !hasSetDefaultValue)
+            {
+                spawnMonsters = config.defaultValue;
+                hasSetDefaultValue = true;
+            }
+        }
 
-	private void Input_ButtonPressed(object? sender, ButtonPressedEventArgs e)
-	{
-		//IL_003a: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0044: Expected O, but got Unknown
-		if (config.toggleKey.JustPressed())
-		{
-			spawnMonsters = !spawnMonsters;
-			Game1.addHUDMessage(new HUDMessage("Set Monster spawns to " + spawnMonsters));
-		}
-	}
+        private void onGameLaunch(object sender, GameLaunchedEventArgs e)
+        {
+            var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 
-	private void World_LocationListChanged(object? sender, LocationListChangedEventArgs e)
-	{
-		if (!Context.get_IsWorldReady())
-		{
-			return;
-		}
-		foreach (GameLocation location in e.get_Added())
-		{
-			removeMonsters(location, ((IEnumerable<NPC>)location.characters).ToArray());
-		}
-	}
+            if (configMenu is null) 
+            {
+                return;
+            }
 
-	private void World_NpcListChanged(object? sender, NpcListChangedEventArgs e)
-	{
-		removeMonsters(e.get_Location(), e.get_Added());
-	}
+            configMenu.Register(
+                ModManifest,
+                () => config = new ModConfig(),
+                () => Helper.WriteConfig(config)
+            );
 
-	private void removeMonsters(GameLocation location, IEnumerable<NPC> npcs)
-	{
-		if (spawnMonsters)
-		{
-			return;
-		}
-		foreach (Monster monster in npcs.OfType<Monster>())
-		{
-			location.characters.Remove((NPC)(object)monster);
-		}
-	}
+            configMenu.AddBoolOption(
+                ModManifest,
+                () => config.defaultValue,
+                value => config.defaultValue = value,
+                () => "Default Value",
+                () => "The Default Value"
+            );
+
+            configMenu.AddKeybindList(
+                ModManifest,
+                () => config.toggleKey,
+                value => config.toggleKey = value,
+                () => "Toggle Keybind",
+                () => "Keybind to Toggle Monsters"
+            );
+        }
+
+        private void onKeyPress(object sender, ButtonPressedEventArgs e)
+        {
+            if (config.toggleKey.JustPressed())
+            {
+                spawnMonsters = !spawnMonsters;
+                Game1.addHUDMessage(new HUDMessage("Set Monster spawns to " + spawnMonsters));
+            }
+        }
+
+        private void onLocationListChanged(object sender, LocationListChangedEventArgs e)
+        {
+            if (!Context.IsWorldReady)
+            {
+                return;
+            }
+            foreach (GameLocation location in e.Added)
+            {
+                removeMonsters(location, location.characters.ToArray());
+            }
+        }
+
+        private void onNPCListChanged(object sender, NpcListChangedEventArgs e)
+        {
+            removeMonsters(e.Location, e.Added);
+        }
+
+        private void removeMonsters(GameLocation location, IEnumerable<NPC> npcs)
+        {
+            if (spawnMonsters)
+            {
+                return;
+            }
+            foreach (Monster m in npcs.OfType<Monster>())
+            {
+                location.characters.Remove(m);
+            }
+        }
+    }
 }
